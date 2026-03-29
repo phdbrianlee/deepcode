@@ -1,30 +1,27 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { TilesRenderer as ThreeTilesRenderer } from '3d-tiles-renderer/three';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Spherical, Vector3 } from 'three';
 
 function TilesRenderer({ 
   url, 
   onTilesLoad, 
   onStatsUpdate,
-  mapboxRef,
-  syncWithMapbox = true 
+  onTilesetCreated,
+  onTilesetBoundingBox
 }) {
   const tilesRendererRef = useRef(null);
-  const { camera, gl, scene } = useThree();
+  const { camera, gl } = useThree();
   const groupRef = useRef(null);
   const frameCountRef = useRef(0);
-  const cameraMatrixRef = useRef(new THREE.Matrix4());
-  const targetPositionRef = useRef(new THREE.Vector3());
-  const tempVecRef = useRef(new THREE.Vector3());
-  const tempSphereRef = useRef(new THREE.Sphere());
+  const initialCameraSetRef = useRef(false);
 
   useEffect(() => {
     if (!url) return;
 
     const tilesRenderer = new ThreeTilesRenderer(url);
     tilesRendererRef.current = tilesRenderer;
+    initialCameraSetRef.current = false;
 
     tilesRenderer.setCamera(camera);
     tilesRenderer.setResolution(camera, gl.domElement.width, gl.domElement.height);
@@ -34,16 +31,38 @@ function TilesRenderer({
 
     tilesRenderer.addEventListener('load-root-tileset', () => {
       console.log('Root tileset loaded');
-      if (onTilesLoad) onTilesLoad();
 
+      const box = new THREE.Box3();
       const sphere = new THREE.Sphere();
-      if (tilesRenderer.getBoundingSphere(sphere)) {
-        tilesRenderer.group.position.copy(sphere.center).multiplyScalar(-1);
+      
+      if (tilesRenderer.getBoundingBox(box)) {
+        const center = new THREE.Vector3();
+        const size = new THREE.Vector3();
+        box.getCenter(center);
+        box.getSize(size);
+        
+        tilesRenderer.group.position.copy(center).multiplyScalar(-1);
+        console.log('Tileset bounding box:', box.min, box.max);
+        console.log('Tileset center:', center);
+        console.log('Tileset size:', size);
+
+        if (onTilesetBoundingBox) {
+          onTilesetBoundingBox({ box, center, size });
+        }
       }
+
+      if (tilesRenderer.getBoundingSphere(sphere)) {
+        console.log('Tileset bounding sphere center:', sphere.center);
+        console.log('Tileset bounding sphere radius:', sphere.radius);
+      }
+
+      if (onTilesLoad) onTilesLoad();
+      if (onTilesetCreated) onTilesetCreated(tilesRenderer);
     });
 
     tilesRenderer.addEventListener('load-model', (e) => {
       const { scene: tileScene } = e;
+      console.log('Model loaded, adding to scene');
       if (groupRef.current && tileScene) {
         groupRef.current.add(tileScene);
       }
@@ -64,7 +83,7 @@ function TilesRenderer({
       tilesRenderer.dispose();
       tilesRendererRef.current = null;
     };
-  }, [url, camera, gl, onTilesLoad]);
+  }, [url, camera, gl, onTilesLoad, onTilesetCreated, onTilesetBoundingBox]);
 
   useEffect(() => {
     const tilesRenderer = tilesRendererRef.current;
@@ -86,10 +105,6 @@ function TilesRenderer({
     camera.updateMatrixWorld();
     tilesRenderer.update();
 
-    if (syncWithMapbox && mapboxRef?.current) {
-      syncCameraToMapbox();
-    }
-
     if (frameCountRef.current % 30 === 0 && onStatsUpdate) {
       onStatsUpdate({
         tilesProcessed: tilesRenderer.stats.tilesProcessed,
@@ -100,48 +115,6 @@ function TilesRenderer({
       });
     }
   });
-
-  const syncCameraToMapbox = useCallback(() => {
-    if (!mapboxRef?.current || !tilesRendererRef.current) return;
-
-    const map = mapboxRef.current.getMap();
-    if (!map) return;
-
-    const mapCenter = map.getCenter();
-    const mapZoom = map.getZoom();
-    const mapPitch = map.getPitch();
-    const mapBearing = map.getBearing();
-
-    const centerLon = mapCenter.lng;
-    const centerLat = mapCenter.lat;
-
-    const earthRadius = 6378137;
-    const latRad = centerLat * Math.PI / 180;
-    const metersPerPixel = earthRadius * 2 * Math.PI / (256 * Math.pow(2, mapZoom));
-
-    const offsetX = (gl.domElement.width / 2) * metersPerPixel;
-    const offsetY = (gl.domElement.height / 2) * metersPerPixel * Math.cos(latRad);
-
-    const heading = mapBearing * Math.PI / 180;
-    const pitch = mapPitch * Math.PI / 180;
-
-    const distance = 1000 * Math.pow(2, 15 - Math.min(mapZoom, 15));
-
-    const posX = -offsetX * Math.cos(heading) + offsetY * Math.sin(heading);
-    const posY = -offsetX * Math.sin(heading) - offsetY * Math.cos(heading);
-    const posZ = distance * Math.cos(pitch);
-    const posW = distance * Math.sin(pitch);
-
-    if (groupRef.current) {
-      groupRef.current.position.set(
-        posX + centerLon * 111319.9 * Math.cos(latRad),
-        posY,
-        -posZ - centerLat * 111319.9
-      );
-
-      groupRef.current.rotation.y = -heading;
-    }
-  }, [gl, mapboxRef]);
 
   return <group ref={groupRef} />;
 }

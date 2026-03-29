@@ -24,8 +24,8 @@
   pointer-events: none;
 }
 
-.canvas-container canvas {
-  pointer-events: auto;
+.canvas-container * {
+  pointer-events: none !important;
 }
 
 .info-panel {
@@ -125,4 +125,111 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 12px;
   pointer-events: none;
+}
+
+.url-input-panel {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  min-width: 500px;
+}
+
+.url-input-panel h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4da6ff;
+  text-align: center;
+}
+
+.url-input-panel .input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.url-input-panel .url-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.url-input-panel .url-input:focus {
+  border-color: #4da6ff;
+}
+
+.url-input-panel .url-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.url-input-panel .load-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #4da6ff, #0066cc);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.url-input-panel .load-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(77, 166, 255, 0.4);
+}
+
+.url-input-panel .load-button:active {
+  transform: translateY(0);
+}
+
+.url-input-panel .loading-text {
+  margin-top: 10px;
+  text-align: center;
+  color: #4da6ff;
+  font-size: 12px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.info-panel .view-on-map-btn {
+  margin-top: 12px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #4da6ff;
+  border-radius: 6px;
+  background: transparent;
+  color: #4da6ff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.info-panel .view-on-map-btn:hover {
+  background: rgba(77, 166, 255, 0.2);
+}
+
+.info-panel .view-on-map-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

@@ -1,13 +1,13 @@
 import React from 'react';
 
-function InfoPanel({ tilesLoaded, stats, tilesetUrl }) {
+function InfoPanel({ tilesLoaded, stats, tilesetUrl, onViewOnMap }) {
   return (
     <div className="info-panel">
       <h2>3D Tiles Renderer</h2>
       
       <div className="status">
         <span className={`status-dot ${tilesLoaded ? 'loaded' : ''}`}></span>
-        <span>{tilesLoaded ? 'Tileset Loaded' : 'Loading...'}</span>
+        <span>{tilesLoaded ? 'Tileset Loaded' : (tilesetUrl ? 'Loading...' : 'Not Loaded')}</span>
       </div>
 
       <div className="stats-grid">
@@ -25,12 +25,23 @@ function InfoPanel({ tilesLoaded, stats, tilesetUrl }) {
         </div>
       </div>
 
-      <div className="url-box">
-        <div className="url-label">Tileset URL</div>
-        <div style={{ fontSize: '11px', marginTop: '4px', wordBreak: 'break-all' }}>
-          {tilesetUrl}
+      {tilesetUrl && (
+        <div className="url-box">
+          <div className="url-label">Current Tileset</div>
+          <div style={{ fontSize: '11px', marginTop: '4px', wordBreak: 'break-all' }}>
+            {tilesetUrl.length > 50 ? tilesetUrl.substring(0, 50) + '...' : tilesetUrl}
+          </div>
         </div>
-      </div>
+      )}
+
+      {tilesLoaded && onViewOnMap && (
+        <button 
+          className="view-on-map-btn"
+          onClick={onViewOnMap}
+        >
+          View on Map
+        </button>
+      )}
     </div>
   );
 }
