@@ -500,7 +500,150 @@ tilesRenderer.lruCache.minBytesSize = 400 * 1024 * 1024; // 400MB
 ### 局限性
 1. 实验性功能（如 `optimizedLoadStrategy`）可能存在兼容性问题
 2. 第三方认证插件依赖外部服务
-3. 部分 3D Tiles 1.1+ 特性支持有限
+3. 部分 3D Tiles 1.1+ 特性支持有限（详见下节）
+
+---
+
+## 11. 3D Tiles 1.1+ 特性支持详情
+
+### 11.1 版本兼容性声明
+
+```javascript
+// TilesRendererBase.js preprocessTileset()
+const version = json.asset.version;
+const [ major, minor ] = version.split('.').map(v => parseInt(v));
+
+if (major === 1 && minor > 0) {
+    console.warn('TilesRenderer: tiles versions at 1.1 or higher have limited support. Some new extensions and features may not be supported.');
+}
+```
+
+库对 3D Tiles 1.1+ 采用**渐进式支持策略**，核心瓦片遍历逻辑仅支持 1.x 版本，超出 1.x 版本会输出警告。
+
+### 11.2 已支持的 3D Tiles 1.1+ 特性
+
+#### 隐式瓦片细化 (Implicit Tiling)
+
+| 特性 | 支持状态 | 实现位置 |
+|------|----------|----------|
+| `implicitTiling` 字段解析 | ✅ 完全支持 | `ImplicitTilingPlugin.js` |
+| 四叉树细分 (QUADTREE) | ✅ 完全支持 | `SUBTREELoader.js` |
+| 八叉树细分 (OCTREE) | ✅ 完全支持 | `SUBTREELoader.js` |
+| 子树可用性位流 (Availability Bitstream) | ✅ 完全支持 | `SUBTREELoader.js` |
+| 外部缓冲区引用 | ✅ 完全支持 | `SUBTREELoader.js` |
+| 子树元数据 (Subtree Metadata) | ⚠️ 部分支持 | 代码中已预留接口但未实现 |
+
+**隐式瓦片 URI 模板替换**:
+```javascript
+// ImplicitTilingPlugin.js preprocessURL()
+const implicitUri = tile.implicitTiling.subtrees.uri
+    .replace('{level}', tile.implicitTilingData.level)
+    .replace('{x}', tile.implicitTilingData.x)
+    .replace('{y}', tile.implicitTilingData.y)
+    .replace('{z}', tile.implicitTilingData.z);
+```
+
+#### 包围盒扩展
+
+| 扩展名 | 支持状态 | 说明 |
+|--------|----------|------|
+| `3DTILES_ellipsoid` | ✅ 完全支持 | 支持自定义椭球体定义 |
+
+```javascript
+// TilesRenderer.js loadRootTileset()
+if ('3DTILES_ellipsoid' in extensions) {
+    const ext = extensions['3DTILES_ellipsoid'];
+    ellipsoid.radius.set(...ext.radii);
+}
+```
+
+### 11.3 GLTF 扩展支持 (3D Tiles 1.1+ 相关)
+
+| 扩展名 | 支持状态 | 实现位置 |
+|--------|----------|----------|
+| `EXT_mesh_features` | ✅ 完全支持 | `GLTFMeshFeaturesExtension.js` |
+| `EXT_structural_metadata` | ✅ 完全支持 | `GLTFStructuralMetadataExtension.js` |
+
+```javascript
+// 访问 MeshFeatures
+const meshFeatures = mesh.userData.meshFeatures;
+if (meshFeatures) {
+    const featureCount = meshFeatures.featureCount;
+    const property = meshFeatures.getProperty(i, 'propertyName');
+}
+
+// 访问 StructuralMetadata
+const structuralMetadata = scene.userData.structuralMetadata;
+if (structuralMetadata) {
+    const value = structuralMetadata.getPropertyByPropertyId(propertyId, index);
+}
+```
+
+### 11.4 传统批处理表扩展
+
+| 扩展名 | 支持状态 | 实现位置 |
+|--------|----------|----------|
+| `3DTILES_batch_table_hierarchy` | ✅ 完全支持 | `BatchTableHierarchyExtension.js` |
+
+```javascript
+// 访问批次表层级数据
+const hierarchyData = batchData['3DTILES_batch_table_hierarchy'];
+```
+
+### 11.5 PNTS 点云扩展
+
+| 扩展名 | 支持状态 | 说明 |
+|--------|----------|------|
+| `3DTILES_draco_point_compression` | ✅ 完全支持 | DRACO 压缩点云 |
+
+### 11.6 未支持或有限的特性
+
+| 特性/扩展 | 支持状态 | 说明 |
+|-----------|----------|------|
+| `subtreeMetadata` | ❌ 未实现 | 子树元数据扩展，预留接口但未激活 |
+| `3DTILES_multiple_contents` | ❌ 未实现 | 多内容瓦片（单个瓦片多个 GLTF） |
+| `3DTILES_content_gltf` (1.1+) | ⚠️ 部分支持 | GLTF 直接作为内容类型已支持 |
+| tilesetMetadata | ⚠️ 部分支持 | 仅解析，访问接口有限 |
+| 纹理压缩 (KTX2/DDS) | ⚠️ 需手动配置 | 需通过 GLTFLoader 添加处理器 |
+
+### 11.7 版本兼容性注意事项
+
+1. **版本断言**: 代码断言 `asset.version` 必须 ≤ 1.x
+   ```javascript
+   console.assert(major <= 1, 'TilesRenderer: asset.version is expected to be a 1.x or a compatible version.');
+   ```
+
+2. **实验性警告**: 使用 1.1+ 版本时控制台会输出警告
+   ```javascript
+   console.warn('TilesRenderer: tiles versions at 1.1 or higher have limited support. Some new extensions and features may not be supported.');
+   ```
+
+3. **优化加载策略兼容性**: `optimizedLoadStrategy` 与以下插件不兼容：
+   - `ImageOverlayPlugin` (启用 `enableTileSplitting` 时)
+   - `QuantizedMeshPlugin`
+   - `ImageFormatPlugin` 子类 (XYZ, TMS 等)
+
+### 11.8 未来可能支持的特性
+
+根据代码分析，以下特性可能在未来版本中得到支持：
+
+1. **子树元数据** (`subtreeMetadata`) - 接口已预留
+2. **多内容瓦片** (`3DTILES_multiple_contents`) - 需要扩展解析逻辑
+3. **纹理压缩** - 需要更好的内置支持
+4. **3D Tiles 2.0** - 尚未规划
+
+### 11.9 检测 tileset 版本的方法
+
+```javascript
+tilesRenderer.addEventListener('load-root-tileset', ({ tileset }) => {
+    const version = tileset.asset.version;
+    console.log(`Tileset version: ${version}`);
+    
+    if (version !== '1.0' && version !== '1.1') {
+        console.warn('Unsupported tileset version');
+    }
+});
+```
 
 ---
 
