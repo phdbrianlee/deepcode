@@ -1,81 +1,81 @@
 # MapboxGL + React Three Fiber + 3DTilesRenderer
 
-This project demonstrates how to integrate [3DTilesRendererJS](https://github.com/NASA-AMMOS/3DTilesRendererJS) with [React](https://reactjs.org/), [mapbox-gl-js](https://docs.mapbox.com/mapbox-gl-js/), and [React Three Fiber](https://github.com/pmndrs/react-three-fiber).
+本项目演示如何将 [3DTilesRendererJS](https://github.com/NASA-AMMOS/3DTilesRendererJS) 与 [React](https://reactjs.org/)、[mapbox-gl-js](https://docs.mapbox.com/mapbox-gl-js/) 和 [React Three Fiber](https://github.com/pmndrs/react-three-fiber) 集成。
 
-## Features
+## 功能特性
 
-- React-based UI
-- Mapbox GL JS for 2D map base layer
-- React Three Fiber for 3D rendering
-- 3DTilesRendererJS for loading and rendering 3D Tiles
-- Real-time tileset statistics display
+- 基于 React 的用户界面
+- Mapbox GL JS 用于 2D 地图底图
+- React Three Fiber 用于 3D 渲染
+- 3DTilesRendererJS 用于加载和渲染 3D Tiles
+- 实时显示瓦片加载统计信息
 
-## Prerequisites
+## 前置要求
 
-- Node.js 18+ 
-- A Mapbox access token (get one at https://account.mapbox.com/)
+- Node.js 18+
+- Mapbox Access Token（请访问 https://account.mapbox.com/ 获取）
 
-## Setup
+## 安装配置
 
-1. Install dependencies:
+1. 安装依赖：
 
 ```bash
 npm install
 ```
 
-2. Configure your Mapbox token:
+2. 配置 Mapbox Token：
 
-Create a `.env` file in the project root:
+在项目根目录创建 `.env` 文件：
 
 ```bash
 VITE_MAPBOX_TOKEN=your_mapbox_token_here
 ```
 
-Or copy from the example:
+或从示例文件复制：
 
 ```bash
 cp .env.example .env
 ```
 
-3. Start the development server:
+3. 启动开发服务器：
 
 ```bash
 npm run dev
 ```
 
-4. Open your browser to the URL shown in the terminal.
+4. 在浏览器中打开终端显示的 URL。
 
-## Usage
+## 使用说明
 
-The demo loads the Cesium 3D Tiles sample dataset showing buildings in Philadelphia. You can:
+演示程序加载 Cesium 3D Tiles 示例数据集（费城建筑物）。功能包括：
 
-- Navigate the map using mouse drag
-- Zoom in/out with scroll wheel
-- Tilt and rotate the view by right-click dragging
-- View real-time tile loading statistics in the top-left panel
+- 鼠标拖拽导航地图
+- 滚轮缩放
+- 右键拖拽倾斜和旋转视图
+- 左上角面板显示实时瓦片加载统计信息
 
-## Project Structure
+## 项目结构
 
 ```
 mapboxgl_r3f_3dtiles/
 ├── src/
 │   ├── components/
-│   │   ├── TilesRenderer.jsx    # 3D Tiles renderer component
-│   │   └── InfoPanel.jsx        # Statistics display panel
-│   ├── App.jsx                   # Main application component
-│   ├── App.css                  # Application styles
-│   └── main.jsx                 # Entry point
+│   │   ├── TilesRenderer.jsx    # 3D Tiles 渲染组件
+│   │   └── InfoPanel.jsx        # 统计信息显示面板
+│   ├── App.jsx                   # 主应用组件
+│   ├── App.css                  # 应用样式
+│   └── main.jsx                 # 入口文件
 ├── index.html
 ├── package.json
 ├── vite.config.js
 └── README.md
 ```
 
-## Key Implementation Details
+## 核心实现细节
 
-### TilesRenderer Component
+### TilesRenderer 组件
 
-The `TilesRenderer` component wraps `ThreeTilesRenderer` from the 3DTilesRendererJS library and integrates it with React Three Fiber's render loop:
+`TilesRenderer` 组件封装了 3DTilesRendererJS 库中的 `ThreeTilesRenderer`，并与 React Three Fiber 的渲染循环集成：
 
 ```jsx
 useFrame(() => {
@@ -84,23 +84,23 @@ useFrame(() => {
 });
 ```
 
-### Layer Integration
+### 层级集成
 
-The map and 3D canvas are layered:
-1. Bottom layer: Mapbox GL map (z-index: 1)
-2. Top layer: React Three Fiber canvas (z-index: 2)
+地图和 3D 画布采用分层结构：
+1. 底层：Mapbox GL 地图（z-index: 1）
+2. 顶层：React Three Fiber 画布（z-index: 2）
 
-This allows the 3D tiles to overlay the 2D map while maintaining interactivity.
+这种设计允许 3D 瓦片覆盖在 2D 地图之上，同时保持地图交互性。
 
-## Available Scripts
+## 可用脚本
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
+| 命令 | 说明 |
+|------|------|
+| `npm run dev` | 启动开发服务器 |
+| `npm run build` | 构建生产版本 |
+| `npm run preview` | 预览生产构建 |
 
-## Dependencies
+## 依赖说明
 
 - **react**: ^18.3.1
 - **react-dom**: ^18.3.1
@@ -111,6 +111,6 @@ This allows the 3D tiles to overlay the 2D map while maintaining interactivity.
 - **mapbox-gl**: ^3.8.0
 - **react-map-gl**: ^7.1.7
 
-## License
+## 许可证
 
 MIT
