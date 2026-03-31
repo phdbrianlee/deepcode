@@ -6,6 +6,48 @@ import TilesRenderer from './components/TilesRenderer';
 import InfoPanel from './components/InfoPanel';
 import './App.css';
 
+// WGS84 椭球体参数
+const WGS84_A = 6378137.0; // 长半轴 (米)
+const WGS84_F = 1 / 298.257223563; // 扁率
+const WGS84_E2 = 2 * WGS84_F - WGS84_F * WGS84_F; // 第一偏心率平方
+
+/**
+ * 将 ECEF 坐标转换为 WGS84 经纬度
+ * @param {number} x - ECEF X 坐标 (米)
+ * @param {number} y - ECEF Y 坐标 (米)
+ * @param {number} z - ECEF Z 坐标 (米)
+ * @returns {{ longitude: number, latitude: number, height: number }}
+ */
+function ecefToLLA(x, y, z) {
+  // 计算经度 (弧度) -> 转换为度
+  const lon = Math.atan2(y, x) * (180 / Math.PI);
+
+  // 计算纬度的初始估计值
+  const p = Math.sqrt(x * x + y * y);
+  let lat = Math.atan2(z, p * (1 - WGS84_E2));
+
+  // 迭代计算精确纬度 (Bowring's method, 3次迭代足够)
+  for (let i = 0; i < 3; i++) {
+    const sinLat = Math.sin(lat);
+    const N = WGS84_A / Math.sqrt(1 - WGS84_E2 * sinLat * sinLat);
+    lat = Math.atan2(z + WGS84_E2 * N * sinLat, p);
+  }
+
+  // 计算高度
+  const sinLat = Math.sin(lat);
+  const N = WGS84_A / Math.sqrt(1 - WGS84_E2 * sinLat * sinLat);
+  const height = p / Math.cos(lat) - N;
+
+  // 纬度转换为度
+  const latDeg = lat * (180 / Math.PI);
+
+  return {
+    longitude: lon,
+    latitude: latDeg,
+    height
+  };
+}
+
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'YOUR_MAPBOX_TOKEN';
 const DEFAULT_TILESET_URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-standards/master/data/SampleData/Cesium3DTileset/tileset.json';
 
@@ -69,8 +111,8 @@ function App() {
         box.getCenter(center);
         box.getSize(size);
         
-        const centerLon = center.x / 111319.9;
-        const centerLat = center.z / 111319.9;
+        // 使用精确的 ECEF 到 WGS84 经纬度转换
+        const { longitude: centerLon, latitude: centerLat } = ecefToLLA(center.x, center.y, center.z);
         
         const maxDim = Math.max(size.x, size.y, size.z);
         const zoom = Math.max(1, 14 - Math.log2(maxDim / 100));

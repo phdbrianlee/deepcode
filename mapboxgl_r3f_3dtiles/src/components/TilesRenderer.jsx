@@ -22,6 +22,7 @@ function TilesRenderer({
     const tilesRenderer = new ThreeTilesRenderer(url);
     tilesRendererRef.current = tilesRenderer;
     initialCameraSetRef.current = false;
+    let isDisposed = false;
 
     tilesRenderer.setCamera(camera);
     tilesRenderer.setResolution(camera, gl.domElement.width, gl.domElement.height);
@@ -30,6 +31,7 @@ function TilesRenderer({
     tilesRenderer.maxTilesProcessed = 250;
 
     tilesRenderer.addEventListener('load-root-tileset', () => {
+      if (isDisposed) return;
       console.log('Root tileset loaded');
 
       const box = new THREE.Box3();
@@ -61,6 +63,7 @@ function TilesRenderer({
     });
 
     tilesRenderer.addEventListener('load-model', (e) => {
+      if (isDisposed) return;
       const { scene: tileScene } = e;
       console.log('Model loaded, adding to scene');
       if (groupRef.current && tileScene) {
@@ -69,6 +72,7 @@ function TilesRenderer({
     });
 
     tilesRenderer.addEventListener('dispose-model', (e) => {
+      if (isDisposed) return;
       const { scene: tileScene } = e;
       if (groupRef.current && tileScene && tileScene.parent) {
         groupRef.current.remove(tileScene);
@@ -80,6 +84,7 @@ function TilesRenderer({
     });
 
     return () => {
+      isDisposed = true;
       tilesRenderer.dispose();
       tilesRendererRef.current = null;
     };
