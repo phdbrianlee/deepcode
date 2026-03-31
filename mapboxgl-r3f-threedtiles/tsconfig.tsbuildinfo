@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/ControlPanel.tsx","./src/components/InfoPanel.tsx","./src/components/LayerLegend.tsx","./src/components/MapContainer.tsx","./src/components/Navbar.tsx","./src/components/TilesOverlay.tsx","./src/constants/tilesets.ts","./src/store/useStore.ts","./src/types/index.ts"],"version":"5.6.3"}
